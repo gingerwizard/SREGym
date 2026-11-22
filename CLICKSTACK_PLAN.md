@@ -34,6 +34,12 @@ Changes from v2: we run the ClickStack collector distribution in the cluster as 
 2. Shakedown with a real agent: needs an Anthropic credential (and the judge model's key) exported on the runner.
 2. SREGym-Lite across arms A, B, C0 to C3.
 
+## Status, 2026-11-22 (evening): repo on the fork, web app on Vercel
+
+- **Repo.** `origin` = github.com/gingerwizard/SREGym (branch `clickstack`, default), `upstream` = SREGym/SREGym; four logical commits on top of b501c3fc; upstream main ~20 commits ahead (rebase before PRs). Further changes by PR: #1 = the web app.
+- **Web app.** `clickstack/webapp` (Next.js 15.5, React 19): server-side ClickHouse via env vars (`CLICKHOUSE_URL/USER/PASSWORD/DATABASE`, `RESULTS_*`), routes `/api/attempts|attempt|queries|sql|config`; the report logic moved to `lib/report-core.js` + `report.css` (shared with report.py, which embeds them; `--write-constants` refreshes `lib/report-constants.json`). Vercel project `sregym-clickstack-report` in scope `daleclickhousecs-projects` (hobby), env vars set as secrets for production and preview, production deploy Ready; `ssoProtection: all` set via the API (check whether the production alias honours it on the hobby plan). Local test: all routes OK, SQL route refuses DDL, page = static report figures.
+- **Report controls added today.** Phase selectors (p1/p2/all, default p1), model defaults (fable-5-2, opus-5-5, sol), hide mitigation (default on), call breakdown by server with shares, saturation reference (kubectl arms, min 3 cells), problem checklist, row markers. Loader columns n_cs/n_sqlmcp/n_obsmcp/shell_kinds.
+
 ## Status, 2026-11-22: results in ClickHouse, SQL tab, Codex SSE bridge
 
 - **ClickHouse store.** `clickstack/load_results.py` → database `sregym_results` on the Cloud service: `attempts`, `tool_calls`, `problem_sets` (ReplacingMergeTree by run_dir; reload = replace), views `attempts_scored`, `pass_rates`, `cells`; SELECT granted to `clickstack_readonly`. Hourly cron on the primary: `collect.sh && load_results.py`. First load: 3,202 attempts.

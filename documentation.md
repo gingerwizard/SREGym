@@ -1142,6 +1142,32 @@ reasoning. The campaign manifests are `results/campaigns/<campaign>.jsonl`;
 retired records are kept beside them as `<campaign>.invalid-<tag>.bak`.
 
 
+### The web app
+
+`clickstack/webapp/` is a Next.js app that serves the same report from the
+ClickHouse results database, deployed on Vercel in the personal (hobby) scope
+`daleclickhousecs-projects` as project `sregym-clickstack-report`. The page's
+filters, tabs, tables and gap analysis are the shared core
+`clickstack/webapp/lib/report-core.js` (with `report.css`), which the static
+single-file page embeds too, so both have the same controls and defaults.
+
+Every ClickHouse access is server-side: the API routes read the endpoint,
+user, password, database and table names from the project's environment
+variables (`CLICKHOUSE_URL`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`,
+`CLICKHOUSE_DATABASE`, `RESULTS_ATTEMPTS_TABLE`, `RESULTS_TOOL_CALLS_TABLE`,
+`RESULTS_PROBLEM_SETS_TABLE`, `RESULTS_SCORED_VIEW`; see `.env.example`),
+stored in Vercel as secrets; the browser only ever talks to the app. Routes:
+`/api/attempts` (every attempt without the long texts, about 8 MB for 3,800
+attempts), `/api/attempt?id=` (one attempt's submission, judge reasoning and
+tool calls, fetched when a row is opened), `/api/queries` (the agents' SQL for
+the attempts in view), `/api/sql` (the SQL tab: one SELECT-shaped statement,
+run with the read-only user, `readonly=1`, 2,000 rows, 60 seconds) and
+`/api/config` (arm vocabulary, problem sets, table schema).
+
+Local run: `cp .env.example .env.local`, fill it in, `npm install`,
+`npm run dev`. Deploy: `vercel --prod --scope daleclickhousecs-projects` from
+`clickstack/webapp`. Code changes go through pull requests on the fork.
+
 ### The results in ClickHouse
 
 `clickstack/load_results.py` loads the same attempts the report is built from
