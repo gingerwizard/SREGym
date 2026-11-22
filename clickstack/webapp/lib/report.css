@@ -1,0 +1,33 @@
+:root{color-scheme:light dark;--surface:#fcfcfb;--plane:#f9f9f7;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--axis:#c3c2b7;--good:#0ca30c;--bad:#d03b3b;--warn:#fab219;--border:rgba(11,11,11,.10)}
+@media (prefers-color-scheme:dark){:root{--surface:#1a1a19;--plane:#0d0d0d;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--axis:#383835;--border:rgba(255,255,255,.10)}}
+body{margin:0;background:var(--plane);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{padding:20px 28px 8px}h1{margin:0 0 4px;font-size:22px}h2{font-size:17px;margin:22px 0 8px}h3{margin:0 0 4px;font-size:15px}.muted{color:var(--muted)}.small{font-size:11px;color:var(--ink2)}
+main{padding:0 28px 40px}.tiles{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.tile{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;min-width:130px}
+.tile .num{font-size:24px;font-weight:600}.tile .lbl{color:var(--ink2);font-size:12px}
+.filters{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:8px 0 16px;position:sticky;top:0;z-index:2}
+.filters .grp{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}.filters .sep{width:1px;height:18px;background:var(--grid)}.filters select,.filters input[type=search],.filters button{font:inherit;padding:4px 8px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink)}
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--grid);margin:16px 0 12px;flex-wrap:wrap}nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--ink2);padding:8px 14px;font:inherit;cursor:pointer}
+nav.tabs button.active{color:var(--ink);border-bottom-color:var(--ink)}.panel{display:none}.panel.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin:0 0 14px}
+table{border-collapse:collapse;width:100%;margin-top:8px;background:var(--surface)}th,td{border-bottom:1px solid var(--grid);padding:6px 8px;text-align:left;vertical-align:top}thead th{color:var(--ink2);font-weight:600;font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.rate{text-align:center;min-width:84px}.rate b,.rate .small{color:inherit}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+.st{display:inline-block;padding:1px 6px;border-radius:4px;font-size:12px;font-weight:600;margin:1px 2px 1px 0;white-space:nowrap}.st.good{color:#fff;background:var(--good)}.st.bad{color:#fff;background:var(--bad)}.st.warn{color:#0b0b0b;background:var(--warn)}.st.muted{color:var(--muted);border:1px solid var(--grid)}
+.bars{display:grid;grid-template-columns:minmax(200px,max-content) 1fr 210px;gap:6px 10px;align-items:center;margin:8px 0}.bar-track{height:10px;background:var(--grid);border-radius:0 4px 4px 0}.bar-fill{height:10px;border-radius:0 4px 4px 0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 8px;font-size:12px;color:var(--ink2)}
+.trace{font-size:12px}.trace td{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-word}.trace td.res{max-height:120px;overflow:auto;display:block;max-width:360px}.trace td.sqlcol{min-width:420px}.fault{min-width:360px;max-width:520px}.pre{white-space:pre-wrap;font-size:12px;color:var(--ink2);max-width:900px}
+details summary{cursor:pointer;color:var(--ink2)}.hidden{display:none!important}.row-exp td{background:var(--plane)}
+.info{display:inline-block;width:14px;height:14px;line-height:13px;border-radius:50%;border:1px solid var(--axis);color:var(--ink2);font:600 10px/13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;text-align:center;margin-left:4px;cursor:help;position:relative;vertical-align:1px;white-space:normal}
+.info::after{content:attr(data-tip);position:absolute;left:50%;top:20px;transform:translateX(-50%);width:max-content;max-width:320px;background:var(--ink);color:var(--plane);padding:8px 10px;border-radius:6px;font-size:12px;font-weight:400;line-height:1.4;text-align:left;white-space:normal;opacity:0;pointer-events:none;transition:opacity .12s;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.info:hover::after,.info:focus::after,.info.show::after{opacity:1}
+th.num .info::after,th:last-child .info::after{left:auto;right:0;transform:none}th:first-child .info::after{left:0;transform:none}.filters .info::after{top:22px}
+#f-problems-box summary{cursor:pointer;list-style:none}#f-problems-box summary::-webkit-details-marker{display:none}#f-problems-box[open] summary{margin-bottom:4px}
+body.hide-mit .mit{display:none}
+.phases{display:flex;gap:6px;align-items:center;flex-basis:100%;margin-bottom:4px}.phases button.phase{font:inherit;font-weight:600;padding:6px 14px;border:1px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink2);cursor:pointer}.phases button.phase.active{background:var(--ink);color:var(--plane);border-color:var(--ink)}
+details.camps summary{cursor:pointer;list-style:none}details.camps summary::-webkit-details-marker{display:none}details.camps[open] summary{margin-bottom:4px}details.camps label{display:inline-block;margin-right:8px}
+table.rows-sep tbody tr>th,table.rows-sep tbody tr>td{border-top:2px solid var(--axis);padding-top:9px;padding-bottom:9px}table.rows-sep tbody tr:nth-child(even)>th,table.rows-sep tbody tr:nth-child(even)>td{background:var(--plane)}table.rows-sep tbody tr>th{font-weight:600}
+.sqlconn label{margin-right:12px}.sqlconn input{font:inherit;padding:3px 6px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink)}
+.sqlgrid{display:grid;grid-template-columns:minmax(260px,1fr) 2fr;gap:12px;margin:10px 0}.sqlgrid textarea{width:100%;box-sizing:border-box;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink);padding:6px}
+.sqlgrid select,#ch-run{font:inherit;padding:4px 8px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink)}#ch-result{overflow:auto;max-height:70vh}
+.probs{columns:3;column-gap:18px;max-height:240px;overflow:auto;font-size:12px;padding:4px 0}.probs label{display:block;break-inside:avoid;white-space:nowrap}.probs-actions{column-span:all;margin-bottom:4px}.probs-actions button{font:inherit;font-size:12px;padding:2px 6px}
