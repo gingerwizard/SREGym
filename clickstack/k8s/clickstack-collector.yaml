@@ -1,0 +1,54 @@
+# ClickStack OTel collector distribution: owns the otel_* schema and is the only pod
+# that talks to ClickHouse Cloud. Credentials come from Secret clickstack-credentials
+# (created by deploy.sh from the private env file; never stored in this repo).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickstack-collector
+  namespace: otel
+  labels: {app: clickstack-collector}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: clickstack-collector}}
+  template:
+    metadata:
+      labels: {app: clickstack-collector}
+    spec:
+      containers:
+        - name: collector
+          image: clickhouse/clickstack-otel-collector:2.19.0
+          env:
+            - name: CLICKHOUSE_ENDPOINT
+              valueFrom: {secretKeyRef: {name: clickstack-credentials, key: CLICKHOUSE_ENDPOINT}}
+            - name: CLICKHOUSE_USER
+              valueFrom: {secretKeyRef: {name: clickstack-credentials, key: CLICKHOUSE_USER}}
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom: {secretKeyRef: {name: clickstack-credentials, key: CLICKHOUSE_PASSWORD}}
+            - name: OTLP_AUTH_TOKEN
+              valueFrom: {secretKeyRef: {name: clickstack-credentials, key: OTLP_AUTH_TOKEN}}
+            - name: HYPERDX_OTEL_EXPORTER_CLICKHOUSE_DATABASE
+              value: "default"
+            - name: HYPERDX_LOG_LEVEL
+              value: "info"
+          ports:
+            - {name: otlp-grpc, containerPort: 4317}
+            - {name: otlp-http, containerPort: 4318}
+            - {name: health, containerPort: 13133}
+          readinessProbe:
+            tcpSocket: {port: 4318}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 200m, memory: 512Mi}
+            limits: {cpu: "1", memory: 2Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickstack-collector
+  namespace: otel
+spec:
+  selector: {app: clickstack-collector}
+  ports:
+    - {name: otlp-grpc, port: 4317, targetPort: 4317}
+    - {name: otlp-http, port: 4318, targetPort: 4318}

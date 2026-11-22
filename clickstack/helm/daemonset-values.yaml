@@ -1,0 +1,137 @@
+# Node agent: container logs, node syslog, host metrics, kubelet stats, cAdvisor throttling counters.
+# K8S_NODE_NAME is injected by the chart's kubeletMetrics/hostMetrics presets.
+mode: daemonset
+fullnameOverride: otel-node
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: 0.161.0
+presets:
+  logsCollection:
+    enabled: true
+    includeCollectorLogs: false
+  hostMetrics:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: true
+    extractAllPodAnnotations: true
+  kubeletMetrics:
+    enabled: true
+clusterRole:
+  rules:
+  - apiGroups:
+    - ''
+    resources:
+    - nodes/proxy
+    - nodes/metrics
+    - nodes/stats
+    verbs:
+    - get
+tolerations:
+- operator: Exists
+extraVolumes:
+- name: hostvarlog
+  hostPath:
+    path: /var/log
+extraVolumeMounts:
+- name: hostvarlog
+  mountPath: /host/var/log
+  readOnly: true
+ports:
+  otlp:
+    enabled: false
+  otlp-http:
+    enabled: false
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+  metrics:
+    enabled: false
+service:
+  enabled: false
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+config:
+  receivers:
+    otlp: null
+    jaeger: null
+    zipkin: null
+    prometheus: null
+    kubeletstats:
+      collection_interval: 20s
+      auth_type: serviceAccount
+      endpoint: ${env:K8S_NODE_NAME}:10250
+      insecure_skip_verify: true
+      metric_groups:
+      - node
+      - pod
+      - container
+      - volume
+    prometheus/cadvisor:
+      config:
+        scrape_configs:
+        - job_name: cadvisor
+          scrape_interval: 30s
+          scheme: https
+          metrics_path: /metrics/cadvisor
+          tls_config:
+            insecure_skip_verify: true
+          authorization:
+            credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          static_configs:
+          - targets:
+            - ${env:K8S_NODE_NAME}:10250
+          metric_relabel_configs:
+          - source_labels:
+            - __name__
+            regex: container_cpu_cfs_(throttled_)?periods_total|container_cpu_cfs_throttled_seconds_total|container_oom_events_total|container_network_(receive|transmit)_errors_total|container_processes|container_sockets|container_file_descriptors|container_fs_usage_bytes
+            action: keep
+    filelog/syslog:
+      include:
+      - /host/var/log/syslog
+      - /host/var/log/kern.log
+      start_at: end
+      resource:
+        service.name: node-syslog
+        k8s.node.name: ${env:K8S_NODE_NAME}
+    filelog:
+      exclude:
+      - /var/log/pods/otel_*/*/*.log
+  exporters:
+    debug: null
+    otlp/gateway:
+      endpoint: otel-gateway.otel.svc.cluster.local:4317
+      tls:
+        insecure: true
+  service:
+    pipelines:
+      logs:
+        receivers:
+        - filelog/syslog
+        processors:
+        - memory_limiter
+        - batch
+        exporters:
+        - otlp/gateway
+      metrics:
+        receivers:
+        - kubeletstats
+        - prometheus/cadvisor
+        processors:
+        - memory_limiter
+        - batch
+        exporters:
+        - otlp/gateway
+      traces: null

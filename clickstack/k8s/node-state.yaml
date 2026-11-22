@@ -1,0 +1,86 @@
+# Tier 3: one JSON record per node per minute with the node-level state kubectl cannot show
+# (sysctls, conntrack, file handles, NTP offset, kubelet config, /etc/hosts, disk). Privileged
+# with hostPID so it can read the host through nsenter; emits to stdout, collected as container
+# logs by the node agent and tagged service.name=node-state by the gateway.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-state-script
+  namespace: otel
+data:
+  node_state.py: |
+    import json, os, subprocess, time
+
+    NODE = os.environ.get("NODE_NAME", "")
+    INTERVAL = int(os.environ.get("INTERVAL_S", "60"))
+    SYSCTLS = [
+        "net.ipv4.ip_local_port_range", "net.netfilter.nf_conntrack_count", "net.netfilter.nf_conntrack_max",
+        "fs.file-max", "fs.nr_open", "fs.inotify.max_user_instances", "fs.inotify.max_user_watches",
+        "vm.max_map_count", "vm.swappiness", "net.core.somaxconn", "net.ipv4.tcp_tw_reuse",
+        "net.ipv4.tcp_max_syn_backlog", "kernel.pid_max", "kernel.threads-max",
+    ]
+
+    def host(cmd, timeout=20):
+        try:
+            r = subprocess.run(["nsenter", "-t", "1", "-m", "-u", "-n", "-i", "--", "sh", "-c", cmd],
+                               capture_output=True, text=True, timeout=timeout)
+            return (r.stdout or r.stderr).strip()
+        except Exception as exc:  # noqa: BLE001
+            return f"error: {exc}"
+
+    while True:
+        rec = {
+            "event": "node_state",
+            "node": NODE,
+            "kernel": host("uname -r"),
+            "time_epoch": host("date +%s"),
+            "uptime_s": host("cut -d' ' -f1 /proc/uptime"),
+            "loadavg": host("cat /proc/loadavg"),
+            "sysctl": {k: host(f"sysctl -n {k}") for k in SYSCTLS},
+            "file_nr": host("cat /proc/sys/fs/file-nr"),
+            "mem_available_kb": host("awk '/MemAvailable/ {print $2}' /proc/meminfo"),
+            "chrony_tracking_csv": host("chronyc -c tracking"),
+            "disk_df": host("df -P / /var/lib/kubelet /var/lib/docker /var/openebs 2>/dev/null | tail -n +2"),
+            "hosts_file": host("cat /etc/hosts"),
+            "kubelet_config": host("cat /var/lib/kubelet/config.yaml"),
+            "kubelet_flags": host("cat /var/lib/kubelet/kubeadm-flags.env"),
+            "services": {s: host(f"systemctl is-active {s}") for s in ["kubelet", "docker", "cri-docker", "chrony"]},
+            "listening_ports": host("ss -Hltn | awk '{print $4}' | sort -u | tr '\\n' ' '"),
+        }
+        print(json.dumps(rec), flush=True)
+        time.sleep(INTERVAL)
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-state
+  namespace: otel
+  labels: {app: node-state}
+spec:
+  selector: {matchLabels: {app: node-state}}
+  template:
+    metadata:
+      labels: {app: node-state}
+    spec:
+      hostPID: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: node-state
+          image: python:3.12-alpine
+          command: ["python3", "-u", "/opt/node_state.py"]
+          securityContext:
+            privileged: true
+          env:
+            - name: NODE_NAME
+              valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+            - name: INTERVAL_S
+              value: "60"
+          volumeMounts:
+            - {name: script, mountPath: /opt}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+      volumes:
+        - name: script
+          configMap: {name: node-state-script, defaultMode: 0555}

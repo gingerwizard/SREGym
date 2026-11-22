@@ -1,0 +1,229 @@
+# Gateway collector (contrib). Every other collector exports here. It applies, once:
+#  - SREGym's agent visibility policy (hidden namespaces khaos/chaos-mesh, hidden
+#    load-generator objects, Helm release secrets, Chaos Mesh objects and events)
+#  - normalisation of k8sobjects records into service.name k8s-objects / k8s-changes /
+#    k8s-events with kind/name/namespace/uid attributes, managedFields removed and
+#    Secret data stripped
+# then forwards to the ClickStack collector with the OTLP auth token.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-gateway-config
+  namespace: otel
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc: {endpoint: 0.0.0.0:4317}
+          http: {endpoint: 0.0.0.0:4318}
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
+
+      transform/k8sobjects:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - attributes["k8s.resource.name"] != nil
+            statements:
+              # pull records: body is the object. watch records: body = {type, object}. Events come via watch.
+              - set(resource.attributes["service.name"], "k8s-objects") where attributes["event.domain"] == nil
+              - set(resource.attributes["service.name"], "k8s-changes") where attributes["event.domain"] == "k8s"
+              - set(resource.attributes["service.name"], "k8s-events") where attributes["k8s.resource.name"] == "events"
+              - set(attributes["k8s.object.event"], body["type"]) where IsMap(body) and body["type"] != nil
+              # pull-mode object fields
+              - set(attributes["k8s.object.kind"], body["kind"]) where IsMap(body) and body["kind"] != nil
+              - set(attributes["k8s.object.name"], body["metadata"]["name"]) where IsMap(body) and body["metadata"] != nil
+              - set(attributes["k8s.namespace.name"], body["metadata"]["namespace"]) where IsMap(body) and body["metadata"] != nil and body["metadata"]["namespace"] != nil
+              - set(attributes["k8s.object.uid"], body["metadata"]["uid"]) where IsMap(body) and body["metadata"] != nil
+              - set(attributes["k8s.object.resource_version"], body["metadata"]["resourceVersion"]) where IsMap(body) and body["metadata"] != nil
+              - delete_key(body["metadata"], "managedFields") where IsMap(body) and body["metadata"] != nil
+              # watch-mode object fields
+              - set(attributes["k8s.object.kind"], body["object"]["kind"]) where IsMap(body) and body["object"] != nil
+              - set(attributes["k8s.object.name"], body["object"]["metadata"]["name"]) where IsMap(body) and body["object"] != nil
+              - set(attributes["k8s.namespace.name"], body["object"]["metadata"]["namespace"]) where IsMap(body) and body["object"] != nil and body["object"]["metadata"]["namespace"] != nil
+              - set(attributes["k8s.object.uid"], body["object"]["metadata"]["uid"]) where IsMap(body) and body["object"] != nil
+              - set(attributes["k8s.object.resource_version"], body["object"]["metadata"]["resourceVersion"]) where IsMap(body) and body["object"] != nil
+              - delete_key(body["object"]["metadata"], "managedFields") where IsMap(body) and body["object"] != nil
+              # Kubernetes Events (events.k8s.io/v1): the regarding object is what matters
+              - set(attributes["k8s.event.reason"], body["object"]["reason"]) where attributes["k8s.resource.name"] == "events" and IsMap(body) and body["object"] != nil
+              - set(attributes["k8s.event.type"], body["object"]["type"]) where attributes["k8s.resource.name"] == "events" and IsMap(body) and body["object"] != nil
+              - set(attributes["k8s.event.note"], body["object"]["note"]) where attributes["k8s.resource.name"] == "events" and IsMap(body) and body["object"] != nil
+              - set(attributes["k8s.event.count"], body["object"]["deprecatedCount"]) where attributes["k8s.resource.name"] == "events" and IsMap(body) and body["object"] != nil
+              - set(attributes["k8s.object.kind"], body["object"]["regarding"]["kind"]) where attributes["k8s.resource.name"] == "events" and IsMap(body) and body["object"] != nil and body["object"]["regarding"] != nil
+              - set(attributes["k8s.object.name"], body["object"]["regarding"]["name"]) where attributes["k8s.resource.name"] == "events" and IsMap(body) and body["object"] != nil and body["object"]["regarding"] != nil
+              # Secret values never leave the cluster (also stripped at the source collector); metadata stays
+              - delete_key(body, "data") where attributes["k8s.object.kind"] == "Secret" and IsMap(body) and body["data"] != nil
+              - delete_key(body, "stringData") where attributes["k8s.object.kind"] == "Secret" and IsMap(body) and body["stringData"] != nil
+              - set(resource.attributes["k8s.namespace.name"], attributes["k8s.namespace.name"]) where attributes["k8s.namespace.name"] != nil
+              - delete_key(attributes, "event.name") where attributes["event.name"] != nil
+
+      transform/node-state:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.container.name"] == "node-state" or attributes["k8s.container.name"] == "node-state"
+            statements:
+              - set(resource.attributes["service.name"], "node-state")
+              - merge_maps(attributes, ParseJSON(body), "upsert") where IsString(body)
+
+      transform/service-name:
+        # Container logs from pods without app.kubernetes.io labels or an owning workload
+        # (static control-plane pods, bare pods) get a service name from the workload or container.
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["service.name"] == nil and resource.attributes["k8s.pod.name"] != nil
+            statements:
+              - set(resource.attributes["service.name"], resource.attributes["k8s.deployment.name"]) where resource.attributes["k8s.deployment.name"] != nil
+              - set(resource.attributes["service.name"], resource.attributes["k8s.daemonset.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.daemonset.name"] != nil
+              - set(resource.attributes["service.name"], resource.attributes["k8s.statefulset.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.statefulset.name"] != nil
+              - set(resource.attributes["service.name"], resource.attributes["k8s.cronjob.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.cronjob.name"] != nil
+              - set(resource.attributes["service.name"], resource.attributes["k8s.job.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.job.name"] != nil
+              - set(resource.attributes["service.name"], resource.attributes["k8s.container.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.container.name"] != nil
+
+      filter/visibility:
+        error_mode: ignore
+        logs:
+          log_record:
+            # hidden namespaces (SREGym HIDDEN_NAMESPACES) plus this pipeline's own namespace, whose
+            # ConfigMaps would otherwise reveal the visibility rules themselves
+            - resource.attributes["k8s.namespace.name"] == "khaos" or resource.attributes["k8s.namespace.name"] == "chaos-mesh" or resource.attributes["k8s.namespace.name"] == "otel"
+            - attributes["k8s.namespace.name"] == "khaos" or attributes["k8s.namespace.name"] == "chaos-mesh" or attributes["k8s.namespace.name"] == "otel"
+            # cluster components logging hidden objects as namespace/name, and anything naming Chaos Mesh
+            - IsString(body) and IsMatch(body, "chaos-mesh|chaos-controller-manager|chaos-daemon|(^|[^a-z0-9-])khaos/")
+            # defence in depth: a Secret record that still carries values is dropped outright
+            - attributes["k8s.object.kind"] == "Secret" and IsMap(body) and (body["data"] != nil or body["stringData"] != nil)
+            - IsMap(body) and body["object"] != nil and body["object"]["kind"] == "Secret"
+            # Helm release records
+            - IsMap(body) and body["type"] == "helm.sh/release.v1"
+            - IsMap(body) and body["object"] != nil and body["object"]["type"] == "helm.sh/release.v1"
+            # objects carrying hidden workload labels (SREGym HIDDEN_LABELS)
+            - IsMap(body) and body["metadata"] != nil and body["metadata"]["labels"] != nil and (body["metadata"]["labels"]["app"] == "load-generator" or body["metadata"]["labels"]["app"] == "locust-fetcher" or body["metadata"]["labels"]["job"] == "workload" or body["metadata"]["labels"]["opentelemetry.io/name"] == "load-generator" or body["metadata"]["labels"]["network-access"] == "restricted")
+            - IsMap(body) and body["object"] != nil and body["object"]["metadata"]["labels"] != nil and (body["object"]["metadata"]["labels"]["app"] == "load-generator" or body["object"]["metadata"]["labels"]["app"] == "locust-fetcher" or body["object"]["metadata"]["labels"]["job"] == "workload" or body["object"]["metadata"]["labels"]["opentelemetry.io/name"] == "load-generator" or body["object"]["metadata"]["labels"]["network-access"] == "restricted")
+            # events about hidden workloads
+            - resource.attributes["service.name"] == "k8s-events" and IsMatch(attributes["k8s.object.name"], "^(locust-fetcher|load-generator|wrk2|workload)")
+            # cluster-scoped Chaos Mesh objects
+            - IsMap(body) and body["metadata"] != nil and body["metadata"]["namespace"] == nil and IsMatch(body["metadata"]["name"], "chaos-mesh|chaos-controller-manager|chaos-daemon")
+            - IsMatch(attributes["k8s.object.name"], "chaos-mesh|chaos-controller-manager|chaos-daemon")
+        metrics:
+          datapoint:
+            # SREGym drops the workload generator's span metrics (unknown_service:wlgen_proc)
+            - resource.attributes["service.name"] == "unknown_service:wlgen_proc"
+            - resource.attributes["k8s.namespace.name"] == "khaos" or resource.attributes["k8s.namespace.name"] == "chaos-mesh" or resource.attributes["k8s.namespace.name"] == "otel"
+            - attributes["k8s.namespace.name"] == "khaos" or attributes["k8s.namespace.name"] == "chaos-mesh" or attributes["k8s.namespace.name"] == "otel"
+            - attributes["namespace"] == "khaos" or attributes["namespace"] == "chaos-mesh"
+        traces:
+          span:
+            - resource.attributes["k8s.namespace.name"] == "khaos" or resource.attributes["k8s.namespace.name"] == "chaos-mesh"
+
+      # Per-run tier gate: CLICKSTACK_TIER on the gateway Deployment (set by clickstack/campaign.py
+      # before each run, default 3 = everything). Lower tiers drop the Kubernetes-state records the
+      # agent's skill does not describe, so "tier N" means both the data and the skill.
+      filter/tier:
+        error_mode: ignore
+        logs:
+          log_record:
+            - '"${env:CLICKSTACK_TIER}" == "0" and (resource.attributes["service.name"] == "k8s-objects" or resource.attributes["service.name"] == "k8s-changes" or resource.attributes["service.name"] == "node-state" or resource.attributes["service.name"] == "node-syslog")'
+            - '"${env:CLICKSTACK_TIER}" == "1" and (resource.attributes["service.name"] == "k8s-objects" or resource.attributes["service.name"] == "k8s-changes") and not IsMatch(attributes["k8s.object.kind"], "^(Pod|Deployment|ReplicaSet|StatefulSet|DaemonSet|Job|CronJob|Service|Endpoints|EndpointSlice|Ingress|PersistentVolumeClaim|PersistentVolume|Node|Namespace)$")'
+            - '"${env:CLICKSTACK_TIER}" == "1" and (resource.attributes["service.name"] == "node-state" or resource.attributes["service.name"] == "node-syslog")'
+            - '"${env:CLICKSTACK_TIER}" == "2" and resource.attributes["service.name"] == "node-state"'
+
+      batch:
+        send_batch_size: 2000
+        send_batch_max_size: 4000
+        timeout: 5s
+
+    exporters:
+      otlphttp/clickstack:
+        endpoint: http://clickstack-collector.otel.svc.cluster.local:4318
+        compression: gzip
+        headers:
+          authorization: "${env:OTLP_AUTH_TOKEN}"
+        sending_queue:
+          enabled: true
+          queue_size: 5000
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 300s
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    service:
+      extensions: [health_check]
+      telemetry:
+        logs: {level: info}
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, transform/k8sobjects, transform/node-state, transform/service-name, filter/visibility, filter/tier, batch]
+          exporters: [otlphttp/clickstack]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, filter/visibility, batch]
+          exporters: [otlphttp/clickstack]
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, filter/visibility, batch]
+          exporters: [otlphttp/clickstack]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-gateway
+  namespace: otel
+  labels: {app: otel-gateway}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: otel-gateway}}
+  template:
+    metadata:
+      labels: {app: otel-gateway}
+      annotations:
+        checksum/config: "manual-bump-1"
+    spec:
+      containers:
+        - name: collector
+          image: otel/opentelemetry-collector-contrib:0.161.0
+          args: ["--config=/etc/otel/config.yaml"]
+          env:
+            - name: OTLP_AUTH_TOKEN
+              valueFrom: {secretKeyRef: {name: clickstack-credentials, key: OTLP_AUTH_TOKEN}}
+            - name: CLICKSTACK_TIER
+              value: "3"
+          ports:
+            - {name: otlp-grpc, containerPort: 4317}
+            - {name: otlp-http, containerPort: 4318}
+            - {name: health, containerPort: 13133}
+          readinessProbe:
+            httpGet: {path: /, port: 13133}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - {name: config, mountPath: /etc/otel}
+          resources:
+            requests: {cpu: 200m, memory: 512Mi}
+            limits: {cpu: "1", memory: 2Gi}
+      volumes:
+        - name: config
+          configMap: {name: otel-gateway-config}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-gateway
+  namespace: otel
+spec:
+  selector: {app: otel-gateway}
+  ports:
+    - {name: otlp-grpc, port: 4317, targetPort: 4317}
+    - {name: otlp-http, port: 4318, targetPort: 4318}

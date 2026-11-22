@@ -1,0 +1,25 @@
+# Phase 1: the arms without Lite data yet (the six ClickStack arms per harness already have it)
+claudecode_obs
+codex_obs
+claudecode_clickstack_t3
+claudecode_clickstack_t4
+claudecode_clickstack_only_t4
+codex_clickstack_t3
+codex_clickstack_t4
+codex_clickstack_only_t4
+claudecode_chsql
+claudecode_chsql_t3
+claudecode_chsql_t4
+claudecode_chsql_only_t0
+claudecode_chsql_only_t1
+claudecode_chsql_only_t2
+claudecode_chsql_only_t3
+claudecode_chsql_only_t4
+codex_chsql
+codex_chsql_t3
+codex_chsql_t4
+codex_chsql_only_t0
+codex_chsql_only_t1
+codex_chsql_only_t2
+codex_chsql_only_t3
+codex_chsql_only_t4

@@ -1,0 +1,482 @@
+# Cluster collector: Kubernetes Events, cluster metrics (k8s_cluster), object snapshots plus change
+# watches (k8sobjects) for tiers 1 and 2, and the application/blackbox/Locust scrape jobs copied from
+# SREGym's Prometheus values (spanmetrics arrive over OTLP from SREGym's collector instead).
+mode: deployment
+replicaCount: 1
+fullnameOverride: otel-cluster
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: 0.161.0
+presets:
+  kubernetesEvents:
+    enabled: true
+  clusterMetrics:
+    enabled: true
+clusterRole:
+  rules:
+  - apiGroups:
+    - '*'
+    resources:
+    - '*'
+    verbs:
+    - get
+    - list
+    - watch
+ports:
+  otlp:
+    enabled: false
+  otlp-http:
+    enabled: false
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+  metrics:
+    enabled: false
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 2Gi
+config:
+  receivers:
+    otlp: null
+    jaeger: null
+    zipkin: null
+    prometheus: null
+    k8sobjects/state:
+      auth_type: serviceAccount
+      objects:
+      - name: pods
+        mode: pull
+        interval: 60s
+      - name: pods
+        mode: watch
+      - name: deployments
+        group: apps
+        mode: pull
+        interval: 60s
+      - name: deployments
+        group: apps
+        mode: watch
+      - name: replicasets
+        group: apps
+        mode: pull
+        interval: 60s
+      - name: replicasets
+        group: apps
+        mode: watch
+      - name: statefulsets
+        group: apps
+        mode: pull
+        interval: 60s
+      - name: statefulsets
+        group: apps
+        mode: watch
+      - name: daemonsets
+        group: apps
+        mode: pull
+        interval: 60s
+      - name: daemonsets
+        group: apps
+        mode: watch
+      - name: jobs
+        group: batch
+        mode: pull
+        interval: 60s
+      - name: jobs
+        group: batch
+        mode: watch
+      - name: cronjobs
+        group: batch
+        mode: pull
+        interval: 60s
+      - name: cronjobs
+        group: batch
+        mode: watch
+      - name: services
+        mode: pull
+        interval: 60s
+      - name: services
+        mode: watch
+      - name: endpoints
+        mode: pull
+        interval: 60s
+      - name: endpointslices
+        group: discovery.k8s.io
+        mode: pull
+        interval: 60s
+      - name: ingresses
+        group: networking.k8s.io
+        mode: pull
+        interval: 60s
+      - name: ingresses
+        group: networking.k8s.io
+        mode: watch
+      - name: persistentvolumeclaims
+        mode: pull
+        interval: 60s
+      - name: persistentvolumes
+        mode: pull
+        interval: 60s
+      - name: nodes
+        mode: pull
+        interval: 60s
+      - name: nodes
+        mode: watch
+      - name: namespaces
+        mode: pull
+        interval: 60s
+      - name: configmaps
+        mode: pull
+        interval: 60s
+      - name: configmaps
+        mode: watch
+      - name: secrets
+        mode: pull
+        interval: 60s
+      - name: networkpolicies
+        group: networking.k8s.io
+        mode: pull
+        interval: 60s
+      - name: networkpolicies
+        group: networking.k8s.io
+        mode: watch
+      - name: serviceaccounts
+        mode: pull
+        interval: 120s
+      - name: roles
+        group: rbac.authorization.k8s.io
+        mode: pull
+        interval: 120s
+      - name: rolebindings
+        group: rbac.authorization.k8s.io
+        mode: pull
+        interval: 120s
+      - name: clusterroles
+        group: rbac.authorization.k8s.io
+        mode: pull
+        interval: 300s
+      - name: clusterrolebindings
+        group: rbac.authorization.k8s.io
+        mode: pull
+        interval: 300s
+      - name: priorityclasses
+        group: scheduling.k8s.io
+        mode: pull
+        interval: 120s
+      - name: resourcequotas
+        mode: pull
+        interval: 60s
+      - name: limitranges
+        mode: pull
+        interval: 120s
+      - name: horizontalpodautoscalers
+        group: autoscaling
+        mode: pull
+        interval: 60s
+      - name: poddisruptionbudgets
+        group: policy
+        mode: pull
+        interval: 120s
+      - name: mutatingwebhookconfigurations
+        group: admissionregistration.k8s.io
+        mode: pull
+        interval: 60s
+      - name: mutatingwebhookconfigurations
+        group: admissionregistration.k8s.io
+        mode: watch
+      - name: validatingwebhookconfigurations
+        group: admissionregistration.k8s.io
+        mode: pull
+        interval: 60s
+      - name: validatingwebhookconfigurations
+        group: admissionregistration.k8s.io
+        mode: watch
+      - name: storageclasses
+        group: storage.k8s.io
+        mode: pull
+        interval: 300s
+      - name: ippools
+        group: crd.projectcalico.org
+        mode: pull
+        interval: 120s
+      - name: felixconfigurations
+        group: crd.projectcalico.org
+        mode: pull
+        interval: 120s
+      - name: bgppeers
+        group: crd.projectcalico.org
+        mode: pull
+        interval: 120s
+      - name: bgpconfigurations
+        group: crd.projectcalico.org
+        mode: pull
+        interval: 120s
+      - name: ipamconfigs
+        group: crd.projectcalico.org
+        mode: pull
+        interval: 120s
+      - name: globalnetworkpolicies
+        group: crd.projectcalico.org
+        mode: pull
+        interval: 120s
+    prometheus/apps:
+      config:
+        global:
+          scrape_interval: 15s
+          scrape_timeout: 10s
+        scrape_configs:
+        - job_name: blackbox-astronomy-shop
+          metrics_path: /probe
+          params:
+            module:
+            - tcp_connect
+          static_configs:
+          - targets:
+            - ad.astronomy-shop:8080
+            - cart.astronomy-shop:8080
+            - checkout.astronomy-shop:8080
+            - currency.astronomy-shop:8080
+            - email.astronomy-shop:8080
+            - frontend.astronomy-shop:8080
+            - frontend-proxy.astronomy-shop:8080
+            - image-provider.astronomy-shop:8081
+            - payment.astronomy-shop:8080
+            - product-catalog.astronomy-shop:8080
+            - product-reviews.astronomy-shop:3551
+            - quote.astronomy-shop:8080
+            - recommendation.astronomy-shop:8080
+            - shipping.astronomy-shop:8080
+            - flagd.astronomy-shop:8013
+            - kafka.astronomy-shop:9092
+            labels:
+              namespace: astronomy-shop
+          relabel_configs:
+          - source_labels:
+            - __address__
+            target_label: __param_target
+          - source_labels:
+            - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: prometheus-prometheus-blackbox-exporter.observe.svc.cluster.local:9115
+        - job_name: blackbox-hotel-reservation
+          metrics_path: /probe
+          params:
+            module:
+            - tcp_connect
+          static_configs:
+          - targets:
+            - frontend.hotel-reservation:5000
+            - search.hotel-reservation:8082
+            - profile.hotel-reservation:8081
+            - geo.hotel-reservation:8083
+            - rate.hotel-reservation:8084
+            - recommendation.hotel-reservation:8085
+            - user.hotel-reservation:8086
+            - reservation.hotel-reservation:8087
+            labels:
+              namespace: hotel-reservation
+          relabel_configs:
+          - source_labels:
+            - __address__
+            target_label: __param_target
+          - source_labels:
+            - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: prometheus-prometheus-blackbox-exporter.observe.svc.cluster.local:9115
+        - job_name: hotel-reservation-application
+          static_configs:
+          - targets:
+            - search.hotel-reservation:9092
+            - rate.hotel-reservation:9091
+            labels:
+              namespace: hotel-reservation
+        - job_name: blackbox-social-network
+          metrics_path: /probe
+          params:
+            module:
+            - tcp_connect
+          static_configs:
+          - targets:
+            - nginx-thrift.social-network:8080
+            - media-frontend.social-network:8081
+            - user-service.social-network:9090
+            - compose-post-service.social-network:9090
+            - social-graph-service.social-network:9090
+            - post-storage-service.social-network:9090
+            - user-timeline-service.social-network:9090
+            - url-shorten-service.social-network:9090
+            - text-service.social-network:9090
+            - unique-id-service.social-network:9090
+            - user-mention-service.social-network:9090
+            - home-timeline-service.social-network:9090
+            - media-service.social-network:9090
+            labels:
+              namespace: social-network
+          relabel_configs:
+          - source_labels:
+            - __address__
+            target_label: __param_target
+          - source_labels:
+            - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: prometheus-prometheus-blackbox-exporter.observe.svc.cluster.local:9115
+        - job_name: blackbox-ingress-hotel-reservation
+          metrics_path: /probe
+          params:
+            module:
+            - http_2xx
+          static_configs:
+          - targets:
+            - http://ingress-nginx-controller.ingress-nginx/api/hotels?inDate=2015-04-09&outDate=2015-04-10&lat=38.0235&lon=-122.095
+            labels:
+              namespace: hotel-reservation
+          relabel_configs:
+          - source_labels:
+            - __address__
+            target_label: __param_target
+          - source_labels:
+            - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: prometheus-prometheus-blackbox-exporter.observe.svc.cluster.local:9115
+          scrape_interval: 15s
+        - job_name: locust-astronomy-shop
+          static_configs:
+          - targets:
+            - load-generator.astronomy-shop:9646
+            labels:
+              namespace: astronomy-shop
+        - job_name: locust-train-ticket
+          static_configs:
+          - targets:
+            - load-generator.train-ticket:9646
+            labels:
+              namespace: train-ticket
+        - job_name: tidb-cluster
+          static_configs:
+          - targets:
+            - basic-tidb.tidb-cluster.svc.cluster.local:10080
+            - basic-pd.tidb-cluster.svc.cluster.local:2379
+        - job_name: incident-arena-slack-spine-app
+          static_configs:
+          - targets:
+            - svc-auth.slack-spine.svc.cluster.local:8000
+            - svc-workspace.slack-spine.svc.cluster.local:8000
+            - svc-channel.slack-spine.svc.cluster.local:8000
+            - svc-message.slack-spine.svc.cluster.local:8000
+            - svc-thread.slack-spine.svc.cluster.local:8000
+            - svc-file.slack-spine.svc.cluster.local:8000
+            - svc-search.slack-spine.svc.cluster.local:8000
+            - svc-notification.slack-spine.svc.cluster.local:8000
+            - svc-platform.slack-spine.svc.cluster.local:8000
+            labels:
+              namespace: slack-spine
+        - job_name: incident-arena-slack-spine-services
+          static_configs:
+          - targets:
+            - ws-gateway.slack-spine.svc.cluster.local:9101
+            - flannel.slack-spine.svc.cluster.local:8200
+            - channel-rt.slack-spine.svc.cluster.local:8201
+            - dispatcher.slack-spine.svc.cluster.local:8202
+            - presence.slack-spine.svc.cluster.local:8123
+            - geodns.slack-spine.svc.cluster.local:8053
+            - kafkagate.slack-spine.svc.cluster.local:8120
+            - scheduler.slack-spine.svc.cluster.local:8121
+            - search-engine.slack-spine.svc.cluster.local:7280
+            - db-maintenance.slack-spine.svc.cluster.local:8081
+            - worker-index.slack-spine.svc.cluster.local:8122
+            - worker-unfurl.slack-spine.svc.cluster.local:8122
+            - worker-av.slack-spine.svc.cluster.local:8122
+            - worker-push.slack-spine.svc.cluster.local:8122
+            - worker-email.slack-spine.svc.cluster.local:8122
+            - worker-events.slack-spine.svc.cluster.local:8122
+            - worker-rollup.slack-spine.svc.cluster.local:8122
+            - worker-retention.slack-spine.svc.cluster.local:8122
+            - postgres-exporter.slack-spine.svc.cluster.local:9187
+            labels:
+              namespace: slack-spine
+        - job_name: incident-arena-slack-spine-envoy
+          static_configs:
+          - targets:
+            - envoy-edge.slack-spine.svc.cluster.local:9901
+            labels:
+              namespace: slack-spine
+          metrics_path: /stats/prometheus
+        - job_name: incident-arena-slack-spine-redpanda
+          static_configs:
+          - targets:
+            - redpanda.slack-spine.svc.cluster.local:9644
+            labels:
+              namespace: slack-spine
+          metrics_path: /public_metrics
+        - job_name: incident-arena-frappe
+          static_configs:
+          - targets:
+            - mysqld-exporter.frappe.svc.cluster.local:9104
+            - redis-exporter-cache.frappe.svc.cluster.local:9121
+            - redis-exporter-queue.frappe.svc.cluster.local:9121
+            - frappe-admin.frappe.svc.cluster.local:8000
+            labels:
+              namespace: frappe
+        - job_name: incident-arena-saleor
+          static_configs:
+          - targets:
+            - postgres-metrics.saleor.svc.cluster.local:9187
+            - valkey-metrics.saleor.svc.cluster.local:9121
+            - rabbitmq.saleor.svc.cluster.local:15692
+            labels:
+              namespace: saleor
+  exporters:
+    debug: null
+    otlp/gateway:
+      endpoint: otel-gateway.otel.svc.cluster.local:4317
+      tls:
+        insecure: true
+  service:
+    pipelines:
+      logs:
+        receivers:
+        - k8sobjects/state
+        processors:
+        - memory_limiter
+        - transform/secrets
+        - filter/helm
+        - batch
+        exporters:
+        - otlp/gateway
+      metrics:
+        receivers:
+        - prometheus/apps
+        processors:
+        - memory_limiter
+        - batch
+        exporters:
+        - otlp/gateway
+      traces: null
+  processors:
+    transform/secrets:
+      error_mode: ignore
+      log_statements:
+      - context: log
+        statements:
+        - delete_key(body, "data") where IsMap(body) and body["kind"] == "Secret"
+        - delete_key(body, "stringData") where IsMap(body) and body["kind"] == "Secret"
+    filter/helm:
+      error_mode: ignore
+      logs:
+        log_record:
+        - IsMap(body) and body["type"] == "helm.sh/release.v1"
+        - IsMap(body) and body["object"] != nil and body["object"]["type"] == "helm.sh/release.v1"
+        - IsMap(body) and body["object"] != nil and body["object"]["kind"] == "Secret"
+service:
+  enabled: false

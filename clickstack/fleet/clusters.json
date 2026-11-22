@@ -1,0 +1,123 @@
+{
+ "c1": {
+  "runner": "sregym-runner",
+  "nodes": [
+   "sregym-control",
+   "sregym-worker-1",
+   "sregym-worker-2"
+  ],
+  "database": "default",
+  "clickstack": true,
+  "sources": {
+   "logs": "6af46faab318a5da95cf2a26",
+   "traces": "6af46fa1e0f355e31a5bd994",
+   "metrics": "6af46fa6b1d3061695d1901b",
+   "sessions": "6af46fdbb1d3061695d19075"
+  }
+ },
+ "c2": {
+  "runner": "sregym-c2-runner",
+  "nodes": [
+   "sregym-c2-control",
+   "sregym-c2-worker-1",
+   "sregym-c2-worker-2"
+  ],
+  "database": "c2",
+  "clickstack": true,
+  "sources": {
+   "logs": "6b00c0f80d44edeaf0949dfe",
+   "traces": "6b00c15e9c2ae72a0697264c",
+   "metrics": "6b00c1629c2ae72a06972669"
+  }
+ },
+ "c3": {
+  "runner": "sregym-c3-runner",
+  "nodes": [
+   "sregym-c3-control",
+   "sregym-c3-worker-1",
+   "sregym-c3-worker-2"
+  ],
+  "database": "c3",
+  "clickstack": true,
+  "sources": {
+   "logs": "6b01c58c1c28eddaebc05475",
+   "traces": "6b01c5f31c28eddaebc05494",
+   "metrics": "6b01c5f8bac4b1fc48be3d31"
+  }
+ },
+ "c4": {
+  "runner": "sregym-c4-runner",
+  "nodes": [
+   "sregym-c4-control",
+   "sregym-c4-worker-1",
+   "sregym-c4-worker-2"
+  ],
+  "database": "c4",
+  "clickstack": true,
+  "sources": {
+   "logs": "6b01c59013625c277ed7fb97",
+   "traces": "6b01c5fcbac4b1fc48be3d42",
+   "metrics": "6b01c6011c28eddaebc054a1"
+  }
+ },
+ "c5": {
+  "runner": "sregym-c5-runner",
+  "nodes": [
+   "sregym-c5-control",
+   "sregym-c5-worker-1",
+   "sregym-c5-worker-2"
+  ],
+  "database": "c5",
+  "clickstack": true,
+  "sources": {
+   "logs": "6b01c5950d44edeaf0953ee2",
+   "traces": "6b01c606bac4b1fc48be3d56",
+   "metrics": "6b01c60abac4b1fc48be3d63"
+  }
+ },
+ "c6": {
+  "runner": "sregym-c6-runner",
+  "nodes": [
+   "sregym-c6-control",
+   "sregym-c6-worker-1",
+   "sregym-c6-worker-2"
+  ],
+  "database": "c6",
+  "clickstack": true,
+  "sources": {
+   "logs": "6b01c5999c2ae72a0697c9d9",
+   "traces": "6b01c60f9c2ae72a0697ca41",
+   "metrics": "6b01c6141c28eddaebc05518"
+  }
+ },
+ "c7": {
+  "runner": "sregym-c7-runner",
+  "nodes": [
+   "sregym-c7-control",
+   "sregym-c7-worker-1",
+   "sregym-c7-worker-2"
+  ],
+  "database": "c7",
+  "clickstack": true,
+  "sources": {
+   "logs": "6b01c59dbac4b1fc48be3d0c",
+   "traces": "6b01c6189c2ae72a0697ca9f",
+   "metrics": "6b01c61c1c28eddaebc0552c"
+  }
+ },
+ "c8": {
+  "runner": "sregym-c8-runner",
+  "nodes": [
+   "sregym-c8-control",
+   "sregym-c8-worker-1",
+   "sregym-c8-worker-2"
+  ],
+  "database": "c8",
+  "clickstack": true,
+  "sources": {
+   "logs": "6b01c5a19c2ae72a0697c9ec",
+   "traces": "6b01c62013625c277ed7fc5f",
+   "metrics": "6b01c62413625c277ed7fc6c"
+  }
+ }
+}
