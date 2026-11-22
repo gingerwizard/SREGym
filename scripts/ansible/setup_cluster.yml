@@ -49,7 +49,7 @@
         state: present
         update_cache: yes
       become: yes
-      timeout: 900
+      timeout: 2400
       when: manage_generic_kernel
 
     - name: Explain generic kernel skip on unsupported architecture
@@ -85,6 +85,11 @@
         KERNEL_VERSION="{{ target_kernel_version }}"
         MENU_ENTRY="Advanced options for Ubuntu>Ubuntu, with Linux $KERNEL_VERSION"
         sed -i "s/^GRUB_DEFAULT=.*/GRUB_DEFAULT=\"$MENU_ENTRY\"/" /etc/default/grub
+        # Cloud images (e.g. GCE) ship /etc/default/grub.d/*-cloudimg-settings.cfg with
+        # GRUB_DEFAULT=0, which is sourced after /etc/default/grub and would undo the line
+        # above. A later-sorting drop-in wins.
+        mkdir -p /etc/default/grub.d
+        printf 'GRUB_DEFAULT="%s"\n' "$MENU_ENTRY" > /etc/default/grub.d/99-sregym-generic-kernel.cfg
         update-grub
       become: yes
       when: need_kernel_switch

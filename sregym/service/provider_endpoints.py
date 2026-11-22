@@ -57,14 +57,14 @@ def provider_endpoint_rules(
 
     if agent in {"autosubmit", "debug"}:
         return ()
-    if agent == "codex":
+    if agent == "codex" or agent.startswith("codex_"):  # codex_clickstack*
         custom_base = _configured_url(environment, "AGENT_API_BASE")
         if custom_base:
             return (EndpointRule.host_from_url(custom_base),)
         if codex_subscription_auth:
             return _rules_from_urls(("https://chatgpt.com", "https://auth.openai.com"))
         return _rules_from_urls((_provider_url("openai", environment),))
-    if agent in ("claudecode", "claudecode_radar"):
+    if agent == "claudecode" or agent.startswith("claudecode_"):  # claudecode_radar, claudecode_clickstack*, ...
         urls = [_provider_url("anthropic", environment)]
         if environment.get("CLAUDE_CODE_OAUTH_TOKEN", "").strip():
             urls.append("https://platform.claude.com")

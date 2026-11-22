@@ -64,6 +64,19 @@ data:
           - name: k8s.namespace.name
 
     exporters:
+      otlp/clickstack:
+        # Forward traces and span metrics to the ClickStack gateway (namespace otel).
+        # Fan-out exporters are independent: a gateway outage queues here and never
+        # affects the Jaeger or Prometheus paths.
+        endpoint: "otel-gateway.otel.svc.cluster.local:4317"
+        tls:
+          insecure: true
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 120s
+        sending_queue:
+          enabled: true
+          queue_size: 2000
       otlp:
         endpoint: "jaeger-backend:4317"
         tls:
@@ -78,17 +91,17 @@ data:
         traces:
           receivers: [jaeger]
           processors: [resource/jaeger, k8sattributes]
-          exporters: [otlp, spanmetrics]
+          exporters: [otlp, spanmetrics, otlp/clickstack]
         traces/otlp:
           receivers: [otlp]
           processors: [k8sattributes]
-          exporters: [otlp, spanmetrics/otlp]
+          exporters: [otlp, spanmetrics/otlp, otlp/clickstack]
         metrics/spanmetrics:
           receivers: [spanmetrics]
-          exporters: [prometheus]
+          exporters: [prometheus, otlp/clickstack]
         metrics/spanmetrics-otlp:
           receivers: [spanmetrics/otlp]
-          exporters: [prometheus/otlp]
+          exporters: [prometheus/otlp, otlp/clickstack]
 ---
 apiVersion: v1
 kind: ServiceAccount

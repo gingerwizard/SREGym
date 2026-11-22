@@ -46,3 +46,14 @@ PROBLEM_SETS = {
     "sregym-lite": SREGYM_LITE_PROBLEMS,
     "sregym-lite-ia": SREGYM_LITE_IA_PROBLEMS,
 }
+
+# Extra named sets from a JSON file ({name: [problem ids]}), so a campaign can define its own suite without
+# editing this module. Used by clickstack/campaign.py with clickstack/problem_sets.json.
+import json as _json  # noqa: E402
+import os as _os  # noqa: E402
+
+_extra = _os.environ.get("SREGYM_PROBLEM_SETS_FILE")
+if _extra and _os.path.exists(_extra):
+    with open(_extra) as _fh:
+        for _name, _ids in _json.load(_fh).items():
+            PROBLEM_SETS.setdefault(_name, tuple(_ids))

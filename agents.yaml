@@ -131,3 +131,333 @@ agents:
       MINI_SRE_DIAGNOSIS_SHARE: "0.667"  # share of --agent-timeout diagnosis may use; mitigation has the rest
     install_script: null
     agent_version: null
+  # Claude Code with the ClickStack MCP server; see clients/claudecode_clickstack/README.md.
+  # The MCP endpoint is the host-side auth proxy (mcp_auth_proxy.py) as the container sees it.
+  # CLICKSTACK_TIER selects the clickstack-telemetry skill (0-3), matching what the collectors ship.
+  - name: claudecode_clickstack
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_clickstack_only_t0
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "0"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false  # no kubeconfig, no egress to the API proxy or SREGym's MCP server
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_clickstack_only_t1
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "1"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false  # no kubeconfig, no egress to the API proxy or SREGym's MCP server
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_clickstack_only_t2
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false  # no kubeconfig, no egress to the API proxy or SREGym's MCP server
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_clickstack_only_t3
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false  # no kubeconfig, no egress to the API proxy or SREGym's MCP server
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  # Codex with the ClickStack MCP server (OpenAI models); see clients/codex_clickstack/README.md.
+  - name: codex_clickstack
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_clickstack_only_t0
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "0"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_clickstack_only_t1
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "1"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_clickstack_only_t2
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_clickstack_only_t3
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: claudecode_chsql
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_chsql_only_t0
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "0"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_chsql_only_t1
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "1"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_chsql_only_t2
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_chsql_only_t3
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: codex_chsql
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_chsql_only_t0
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "0"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_chsql_only_t1
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "1"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_chsql_only_t2
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "2"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_chsql_only_t3
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: claudecode_clickstack_t3
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_clickstack_t4
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_clickstack_only_t4
+    kickoff_command: python -m clients.claudecode_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_chsql_t3
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_chsql_t4
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_chsql_only_t4
+    kickoff_command: python -m clients.claudecode_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: claudecode_obs
+    kickoff_command: python -m clients.claudecode_obs.driver
+    kickoff_workdir: .
+    kickoff_env:
+      OBS_MCP_BASE: "http://host.docker.internal:9954"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-claudecode.sh
+    agent_version: "2.1.318"  # newest release older than the image's 7-day npm release-age rule
+  - name: codex_clickstack_t3
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_clickstack_t4
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_clickstack_only_t4
+    kickoff_command: python -m clients.codex_clickstack.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CLICKSTACK_MCP_URL: "http://host.docker.internal:9300/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_chsql_t3
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "3"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_chsql_t4
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "true"
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_chsql_only_t4
+    kickoff_command: python -m clients.codex_chsql.driver
+    kickoff_workdir: .
+    kickoff_env:
+      CHSQL_MCP_URL: "http://host.docker.internal:9400/mcp"
+      CLICKSTACK_TIER: "4"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"
+  - name: codex_obs
+    kickoff_command: python -m clients.codex_obs.driver
+    kickoff_workdir: .
+    kickoff_env:
+      OBS_MCP_BASE: "http://host.docker.internal:9954"
+      CLICKSTACK_EXPECT_KUBECTL: "false"
+    cluster_access: false
+    install_script: install-codex.sh
+    agent_version: "0.166.0"

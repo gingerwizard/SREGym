@@ -4,8 +4,10 @@ import contextlib
 import json
 import logging
 import math
+import os
 import shlex
 import shutil
+import subprocess
 import threading
 import time
 from collections.abc import Callable
@@ -726,6 +728,22 @@ class Conductor:
         with self._phase("undeploy_leftovers"):
             self.undeploy_app()  # Cleanup any leftovers
         self.logger.info("App leftovers undeployed.")
+        # Optional operator hook, e.g. emptying an external telemetry store so every
+        # attempt starts from the same empty state the observe namespace wipe gives
+        # Prometheus, Loki and Jaeger. Set SREGYM_PRE_DEPLOY_HOOK to a shell command.
+        pre_deploy_hook = os.environ.get("SREGYM_PRE_DEPLOY_HOOK", "").strip()
+        if pre_deploy_hook:
+            self.logger.info(f"[HOOK] Running pre-deploy hook: {pre_deploy_hook}")
+            with self._phase("pre_deploy_hook"):
+                hook_result = subprocess.run(
+                    pre_deploy_hook, shell=True, capture_output=True, text=True, timeout=600
+                )
+            if hook_result.returncode != 0:
+                raise RuntimeError(
+                    f"pre-deploy hook failed with exit {hook_result.returncode}: "
+                    f"{(hook_result.stderr or hook_result.stdout).strip()[:500]}"
+                )
+            self.logger.info(f"[HOOK] Pre-deploy hook done: {hook_result.stdout.strip()[:300]}")
         self.logger.info("Deploying app...")
         with self._phase("deploy"):
             self.deploy_app()
