@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS {db}.attempts (
     tokens_total Nullable(UInt64), tokens_input Nullable(UInt64), tokens_output Nullable(UInt64), tokens_cached Nullable(UInt64),
     cost_usd Nullable(Float32), agent_wall_s Nullable(Float32), turns Nullable(UInt32),
     n_calls UInt32, n_mcp UInt32, n_kubectl UInt32, n_shell UInt32, n_sql UInt32, n_errors UInt32, n_probe UInt32, n_fix UInt32, n_scripted UInt32,
-    tools Map(String, UInt32), tool_err Map(String, UInt32), kverbs Map(String, UInt32), areas Map(String, UInt32),
+    n_cs UInt32, n_sqlmcp UInt32, n_obsmcp UInt32,
+    tools Map(String, UInt32), tool_err Map(String, UInt32), kverbs Map(String, UInt32), areas Map(String, UInt32), shell_kinds Map(String, UInt32),
     checks Map(String, String), dims Map(String, Float32),
     run_status LowCardinality(String), timed_out Nullable(Bool), deploy_failed Nullable(Bool), incomplete_reason String, unscored String,
     blocked_requests Nullable(UInt32), skill_read Nullable(Bool), mcp_version LowCardinality(String), judge_model LowCardinality(String),
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS {db}.tool_calls (
 CREATE TABLE IF NOT EXISTS {db}.problem_sets (
     set_name LowCardinality(String), problem LowCardinality(String)
 ) ENGINE = ReplacingMergeTree ORDER BY (set_name, problem);
+ALTER TABLE {db}.attempts ADD COLUMN IF NOT EXISTS n_cs UInt32 AFTER n_scripted, ADD COLUMN IF NOT EXISTS n_sqlmcp UInt32 AFTER n_cs, ADD COLUMN IF NOT EXISTS n_obsmcp UInt32 AFTER n_sqlmcp, ADD COLUMN IF NOT EXISTS shell_kinds Map(String, UInt32) AFTER areas;
 CREATE OR REPLACE VIEW {db}.attempts_scored AS
     SELECT * FROM {db}.attempts FINAL WHERE diagnosis IS NOT NULL AND NOT in_progress;
 CREATE OR REPLACE VIEW {db}.pass_rates AS
@@ -149,7 +151,8 @@ def attempt_row(a: dict) -> dict:
         "cost_usd": a.get("cost_usd"), "agent_wall_s": a.get("agent_wall_s"), "turns": as_int(a.get("turns")),
         "n_calls": a["n_mcp"] + a["n_kubectl"] + a["n_shell"], "n_mcp": a["n_mcp"], "n_kubectl": a["n_kubectl"], "n_shell": a["n_shell"],
         "n_sql": a["n_sql"], "n_errors": a["n_errors"], "n_probe": a.get("n_probe") or 0, "n_fix": a.get("n_fix") or 0, "n_scripted": a.get("n_scripted") or 0,
-        "tools": a.get("tools") or {}, "tool_err": a.get("tool_err") or {}, "kverbs": a.get("kverbs") or {}, "areas": a.get("areas") or {},
+        "n_cs": a.get("n_cs") or 0, "n_sqlmcp": a.get("n_sqlmcp") or 0, "n_obsmcp": a.get("n_obsmcp") or 0,
+        "tools": a.get("tools") or {}, "tool_err": a.get("tool_err") or {}, "kverbs": a.get("kverbs") or {}, "areas": a.get("areas") or {}, "shell_kinds": a.get("shell_kinds") or {},
         "checks": a.get("checks") or {}, "dims": {k: float(v) for k, v in (a.get("dims") or {}).items()},
         "run_status": a.get("run_status") or "", "timed_out": a.get("timed_out"), "deploy_failed": a.get("deploy_failed"),
         "incomplete_reason": a.get("incomplete_reason") or "", "unscored": a.get("unscored") or "",

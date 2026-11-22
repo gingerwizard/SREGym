@@ -1,0 +1,3 @@
+.topbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;padding:16px 28px 4px}
+.topbar h1{margin:0;font-size:20px}.topbar .status{color:var(--muted);font-size:12px}.topbar button{font:inherit;font-size:12px;padding:3px 8px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
+.loading{padding:40px 28px;color:var(--muted)}.err{padding:20px 28px;color:var(--bad);white-space:pre-wrap}
