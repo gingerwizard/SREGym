@@ -1156,7 +1156,11 @@ user, password, database and table names from the project's environment
 variables (`CLICKHOUSE_URL`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`,
 `CLICKHOUSE_DATABASE`, `RESULTS_ATTEMPTS_TABLE`, `RESULTS_TOOL_CALLS_TABLE`,
 `RESULTS_PROBLEM_SETS_TABLE`, `RESULTS_SCORED_VIEW`; see `.env.example`),
-stored in Vercel as secrets; the browser only ever talks to the app. Routes:
+stored in Vercel as secrets; the browser only ever talks to the app. Access
+is by a shared password: `middleware.ts` requires HTTP Basic credentials
+(`APP_USER`, default `sregym`, and `APP_PASSWORD`, both project environment
+variables) on every request, so the URL can be given to colleagues without a
+Vercel account; Vercel Authentication is off. Routes:
 `/api/attempts` (every attempt without the long texts, about 8 MB for 3,800
 attempts), `/api/attempt?id=` (one attempt's submission, judge reasoning and
 tool calls, fetched when a row is opened), `/api/queries` (the agents' SQL for

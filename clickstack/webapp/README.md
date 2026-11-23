@@ -8,7 +8,9 @@ fills. The analysis and rendering logic is `lib/report-core.js`, shared with the
   `app/api/queries` the agents' SQL for a set of attempts, `app/api/sql` read-only free SQL for the SQL tab,
   `app/api/config` vocabulary, problem sets and schema.
 - Configuration is environment only (see `.env.example`): ClickHouse URL, user, password, database and table names.
+- `middleware.ts` protects every request with HTTP Basic auth when `APP_PASSWORD` is set (`APP_USER` defaults to
+  `sregym`), so the deployment can be shared with a password instead of a Vercel login.
 
 Local: `cp .env.example .env.local`, fill it in, `npm install`, `npm run dev`.
 Deploy: `vercel --scope daleclickhousecs-projects` from this directory (the project's environment variables hold
-the credentials); Vercel Authentication should stay on, the data includes agent transcripts.
+the credentials); set `APP_PASSWORD` there; the data includes agent transcripts.
