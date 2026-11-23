@@ -1,3 +1,6 @@
 .topbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;padding:16px 28px 4px}
 .topbar h1{margin:0;font-size:20px}.topbar .status{color:var(--muted);font-size:12px}.topbar button{font:inherit;font-size:12px;padding:3px 8px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
 .loading{padding:40px 28px;color:var(--muted)}.err{padding:20px 28px;color:var(--bad);white-space:pre-wrap}
+.login{min-height:70vh;display:flex;align-items:center;justify-content:center;padding:24px}.login .card{max-width:420px;width:100%}.login h1{font-size:18px;margin:0 0 6px}
+.login label{display:block;margin:14px 0 10px}.login input[type=password]{display:block;width:100%;box-sizing:border-box;margin-top:6px;font:inherit;padding:8px 10px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink)}
+.login button{font:inherit;padding:8px 14px;border:1px solid var(--ink);border-radius:999px;background:var(--ink);color:var(--plane);cursor:pointer}.login .bad{color:var(--bad);font-size:13px}
