@@ -759,7 +759,7 @@ def load_attempts(root: Path, runs: list[dict]) -> list[dict]:
             verdict = as_bool(row.get("Diagnosis.success"))
             mode = "pass" if verdict is True else failure_mode(checks, row.get("Diagnosis.submission") or "", n_errors, n_calls) if verdict is False else "unscored"
             attempts.append({
-                "campaign": run.get("campaign"), "cluster": run.get("cluster") or "c1", "run_started_at": run.get("started_at"),
+                "campaign": run.get("campaign"), "cluster": run.get("cluster") or "c1", "run_started_at": run.get("started_at"), "in_progress": bool(run.get("in_progress")),
                 "model": run["model"], "agent": agent, "harness": harness_of(agent), "mcp_version": mcp_version_of(run),
                 "family": family_of(agent, run.get("tier")), "tier": run.get("tier"), "kubectl": bool(run.get("kubectl")),
                 "judge_model": run.get("judge_model"), "problem": problem, "attempt": n,

@@ -674,7 +674,13 @@ ticked, and "hide saturated problems" on with the kubectl arms as reference.
 `?sat=0` opens with the switch off.
 
 **Matrix**: model against arm. Each cell is diagnosis pass@1 with the counts
-underneath and, for kubectl arms, the mitigation count. Darker is better.
+underneath and, for kubectl arms, the mitigation count. Darker is better. A
+small dot in the corner of each cell, and before each row of the headline and
+tool-use tables, shows completeness: green when every planned attempt is
+scored (the problems of the selected set or phase, minus hidden ones, times
+three attempts), orange when some are scored or a pair is still running, red
+when nothing has started. Hovering the dot gives the counts, so a 93% over
+54 scored attempts of 162 planned reads differently from a finished cell.
 
 The page is organised in nine tabs; the URL hash selects one, so a link can
 point at a tab. A problem-set filter beside the problem list restricts every
