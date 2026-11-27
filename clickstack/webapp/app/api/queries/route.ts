@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const c = config();
     const data = await rows<Record<string, any>>(`
       SELECT model, family, problem, attempt, run_dir, pre_text, sql, error, error_text
-      FROM ${c.toolCalls} FINAL WHERE sql != '' AND run_dir IN ({ids:Array(String)}) ORDER BY run_dir, i LIMIT 2000`, { ids });
+      FROM ${c.toolCalls} FINAL WHERE sql != '' AND run_dir IN ({ids:Array(String)}) ORDER BY run_dir, i LIMIT 2000`, { ids }, { max_result_rows: "0", max_result_bytes: "0" });
     return NextResponse.json(data.map((r) => ({ a: { model: r.model, family: r.family, problem: r.problem, attempt: r.attempt },
       s: { pre_text: r.pre_text, sql: r.sql, error: r.error, error_text: r.error_text } })));
   } catch (e) {

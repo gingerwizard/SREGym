@@ -15,7 +15,7 @@ export async function GET() {
              tools, tool_err, kverbs, areas, shell_kinds, checks, dims, run_status, timed_out, deploy_failed, incomplete_reason, unscored,
              blocked_requests, skill_read, mcp_version, judge_model, fault
       FROM ${c.attempts} FINAL
-      ORDER BY campaign, agent, model, problem, attempt`);
+      ORDER BY campaign, agent, model, problem, attempt`, {}, { max_result_rows: "0", max_result_bytes: "0" });
     for (const a of data) {
       a.tokens = a.tokens_total == null ? null : { total_tokens: a.tokens_total, input_tokens: a.tokens_input, output_tokens: a.tokens_output, cached_input_tokens: a.tokens_cached };
       delete a.tokens_total; delete a.tokens_input; delete a.tokens_output; delete a.tokens_cached;

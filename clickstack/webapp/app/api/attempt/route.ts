@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       rows<Record<string, unknown>>(`SELECT submission, judge_reasoning, checks, dims, fault FROM ${c.attempts} FINAL WHERE run_dir = {id:String} LIMIT 1`, { id }),
       rows<Record<string, any>>(`
         SELECT i, kind, tool, area, args, sql, kubectl_tokens, probe, scripted, error, error_text, dur_s, pre_text
-        FROM ${c.toolCalls} FINAL WHERE run_dir = {id:String} ORDER BY i`, { id }),
+        FROM ${c.toolCalls} FINAL WHERE run_dir = {id:String} ORDER BY i`, { id }, { max_result_rows: "0", max_result_bytes: "0" }),
     ]);
     const steps = calls.map((s) => ({ i: s.i, kind: s.kind, tool: s.tool, area: s.area, args: s.args, sql: s.sql || null, kv: s.kubectl_tokens, probe: s.probe,
       scripted: s.scripted, error: s.error, error_text: s.error_text, dur_s: s.dur_s, pre_text: s.pre_text }));
