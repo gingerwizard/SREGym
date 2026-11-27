@@ -36,6 +36,8 @@ export default function Dashboard() {
             return r.json();
           },
         };
+        const faults: Record<string, string> = cfg.faults ?? {};
+        for (const a of data) (a as Record<string, unknown>).fault = faults[String(a.problem)] ?? "";
         mount.current.innerHTML = "";
         core.initReport(mount.current, { ...cfg, data, loader, notesHtml: "" });
         setState({ phase: "ready", count: data.length, at: new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC" });

@@ -9,13 +9,16 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const c = config();
-    const [setRows, colRows] = await Promise.all([
+    const [setRows, colRows, faultRows] = await Promise.all([
       rows<{ set_name: string; problem: string }>(`SELECT set_name, problem FROM ${c.problemSets} FINAL ORDER BY set_name, problem`),
       rows<{ table: string; name: string; type: string }>(
         `SELECT table, name, type FROM system.columns WHERE database = {db:String} AND table IN ({tables:Array(String)}) ORDER BY table, position`,
         { db: c.database, tables: [c.attempts, c.toolCalls, c.problemSets].map((t) => t.split(".")[1]) },
       ),
+      rows<{ problem: string; fault: string }>(`SELECT problem, anyLast(fault) AS fault FROM ${c.attempts} FINAL WHERE fault != '' GROUP BY problem`),
     ]);
+    const faults: Record<string, string> = {};
+    for (const r of faultRows) faults[r.problem] = r.fault;
     const sets: Record<string, string[]> = {};
     for (const r of setRows) (sets[r.set_name] ??= []).push(r.problem);
     const schema: Record<string, [string, string][]> = {};
@@ -23,6 +26,7 @@ export async function GET() {
     return NextResponse.json({
       ...constants,
       sets,
+      faults,
       ch: { proxy: "/api/sql", database: c.database, tables: { scored: c.scored, calls: c.toolCalls }, schema },
     }, { headers: { "Cache-Control": "private, max-age=60" } });
   } catch (e) {
