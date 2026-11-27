@@ -15,10 +15,11 @@ export async function GET() {
         `SELECT table, name, type FROM system.columns WHERE database = {db:String} AND table IN ({tables:Array(String)}) ORDER BY table, position`,
         { db: c.database, tables: [c.attempts, c.toolCalls, c.problemSets].map((t) => t.split(".")[1]) },
       ),
-      rows<{ problem: string; fault: string }>(`SELECT problem, anyLast(fault) AS fault FROM ${c.attempts} FINAL WHERE fault != '' GROUP BY problem`),
+      // alias must not shadow the column used in WHERE (ClickHouse would see an aggregate in WHERE)
+      rows<{ problem: string; fault_text: string }>(`SELECT problem, anyLast(fault) AS fault_text FROM ${c.attempts} FINAL WHERE fault != '' GROUP BY problem`),
     ]);
     const faults: Record<string, string> = {};
-    for (const r of faultRows) faults[r.problem] = r.fault;
+    for (const r of faultRows) faults[r.problem] = r.fault_text;
     const sets: Record<string, string[]> = {};
     for (const r of setRows) (sets[r.set_name] ??= []).push(r.problem);
     const schema: Record<string, [string, string][]> = {};
