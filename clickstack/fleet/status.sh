@@ -8,7 +8,7 @@ done=$(sed "/queue done/q" ~/fleet-queue.log 2>/dev/null | grep -c "^    -> "); 
 total=$(grep -c . "$q" 2>/dev/null || echo "?")
 echo "  pairs finished: $done / $total; running: $(pgrep -f "clickstack/campaign[.]py --name" >/dev/null && echo yes || echo no)"
 grep -E "^===|-> " ~/fleet-queue.log 2>/dev/null | tail -2 | sed "s/^/  /"
-for extra in ~/fleet-queue2.log ~/fleet-queue3.log; do
+for extra in ~/fleet-queue2.log ~/fleet-queue3.log ~/fleet-queue4.log ~/fleet-queue5.log; do
     [ -f "$extra" ] || continue
     name=$(basename "$extra" .log | sed s/fleet-//)
     n=$(sed "/queue done/q" "$extra" 2>/dev/null | grep -c "^    -> "); t=$(grep -c . ~/fleet/"$name" 2>/dev/null); echo "  -- $name: ${n:-0} pair(s) finished of ${t:-?}$(grep -q "queue done" "$extra" && echo ", filling gaps or done")"

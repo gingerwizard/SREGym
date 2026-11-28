@@ -106,11 +106,13 @@ const HELP = {
  sqlwhere: "The filters at the top of the page, expressed as a WHERE clause over the attempts table: campaigns, models, arms, harness, problem set, the problem checklist and the hidden saturated problems. Presets insert it where they say {where}; paste it into your own queries to keep the page and the SQL on the same slice.",
  stockref: "The reference for this model is its stock arm (kubectl + Prometheus/Loki/Jaeger) over the same filters; the arm filter is ignored for the reference so it stays available while you look at other arms.",
 };
-const PHASES = { p1: {label:'Phase 1 · Lite problems, every arm', campaigns:['lite-sweep','lite-sweep-fill','phase1','phase1-fill']},
-                 p2: {label:'Phase 2 · 54 further problems', campaigns:['phase2','phase2-fill']},
-                 all: {label:'Everything', campaigns:null} };
-function applyPhase(key){ const ph=PHASES[key]; if(!ph) return; document.querySelectorAll('.f-camp').forEach(x=>{ x.checked = ph.campaigns? ph.campaigns.includes(x.value) : true; }); }
-function currentPhase(){ const on=new Set([...document.querySelectorAll('.f-camp:checked')].map(x=>x.value)); for(const [k,ph] of Object.entries(PHASES)){ const want=new Set((ph.campaigns||campaigns).filter(c=>campaigns.includes(c))); if(want.size===on.size && [...want].every(c=>on.has(c))) return k; } return null; }
+// a campaign belongs to a phase by name prefix, so later fills (phase1-fill2, phase2-fill ...) are included automatically
+const PHASES = { p1: {label:'Phase 1 · Lite problems, every arm', prefixes:['lite-sweep','phase1']},
+                 p2: {label:'Phase 2 · 54 further problems', prefixes:['phase2']},
+                 all: {label:'Everything', prefixes:null} };
+const phaseCampaigns = ph => ph.prefixes? campaigns.filter(c=>ph.prefixes.some(p=>c===p || c.startsWith(p+'-'))) : campaigns;
+function applyPhase(key){ const ph=PHASES[key]; if(!ph) return; const want=new Set(phaseCampaigns(ph)); document.querySelectorAll('.f-camp').forEach(x=>{ x.checked = want.has(x.value); }); }
+function currentPhase(){ const on=new Set([...document.querySelectorAll('.f-camp:checked')].map(x=>x.value)); for(const [k,ph] of Object.entries(PHASES)){ const want=new Set(phaseCampaigns(ph)); if(want.size===on.size && [...want].every(c=>on.has(c))) return k; } return null; }
 const DEFAULT_MODELS = ['claude-fable-5-2','claude-opus-5-5','gpt-6.1-sol'];   // the study's models; others (earlier pilots) start unticked
 const defaultModel = m => models.some(x=>DEFAULT_MODELS.includes(x)) ? DEFAULT_MODELS.includes(m) : true;
 const SHOW_HELP = new URLSearchParams(location.search).get('help');  // ?help=passk keeps that explanation open (for links and screenshots)
